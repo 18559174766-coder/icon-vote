@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星账云管家 - 图标投票</title>
+  <style>
+    * { margin:0; padding:0; box-sizing: border-box; }
+
+    :root {
+      --primary: #4F6EF7;
+      --primary-dark: #3A56D4;
+      --success: #00C853;
+      --danger: #FF3D00;
+      --bg: #F5F6FA;
+      --card-bg: #FFFFFF;
+      --text-main: #1A1A2E;
+      --text-secondary: #6B7280;
+      --border: #E5E7EB;
+      --radius: 16px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    /* 密码验证 */
+    .password-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .password-box {
+      background: white;
+      padding: 40px;
+      border-radius: var(--radius);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .password-box h2 { margin-bottom: 10px; color: var(--primary); }
+    .password-box p { color: var(--text-secondary); margin-bottom: 20px; font-size: 14px; }
+    .password-box input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      outline: none;
+    }
+    .password-box input:focus { border-color: var(--primary); }
+    .password-box button {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .password-error { color: var(--danger); font-size: 13px; margin-top: 10px; display: none; }
+
+    /* 主内容 */
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+    .header { text-align: center; margin-bottom: 30px; }
+    .header h1 { color: var(--primary); margin-bottom: 5px; }
+    .header p { color: var(--text-secondary); }
+
+    .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+    .tab {
+      padding: 10px 30px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: white;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* 投票页 */
+    .vote-section { }
+    .selected-count {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 18px;
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .icon-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .icon-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+    .icon-card.selected { border-color: var(--primary); background: #EEF1FE; }
+    .icon-card img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 8px; }
+    .icon-card .name { font-size: 11px; color: var(--text-secondary); word-break: break-all; }
+
+    .submit-btn {
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 15px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .submit-btn:disabled { background: #CCC; cursor: not-allowed; }
+
+    .closed-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--danger);
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    /* 结果页 */
+    .results-section { }
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-bottom: 30px;
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+    .stats strong { color: var(--primary); font-size: 24px; }
+
+    .top-list { max-width: 600px; margin: 0 auto; }
+    .top-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      background: white;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .top-rank {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+    .top-rank.gold { background: #FFD700; }
+    .top-rank.silver { background: #C0C0C0; }
+    .top-rank.bronze { background: #CD7F32; }
+    .top-icon { width: 36px; height: 36px; object-fit: contain; margin-right: 12px; flex-shrink: 0; }
+    .top-name { flex: 1; font-size: 14px; color: var(--text-main); }
+    .top-votes { font-weight: 600; color: var(--primary); font-size: 14px; }
+
+    .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+
+    /* 成功弹窗 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-content {
+      background: white;
+      padding: 40px;
+      border-radius: var(--radius);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    .modal-content h2 { color: var(--success); margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+
+  <!-- 密码验证 -->
+  <div class="password-overlay" id="password-overlay">
+    <div class="password-box">
+      <h2>🔒 访问验证</h2>
+      <p>请输入访问密码</p>
+      <input type="password" id="password-input" placeholder="请输入密码" />
+      <button onclick="checkPassword()">确认</button>
+      <div class="password-error" id="password-error">密码错误，请重试</div>
+    </div>
+  </div>
+
+  <!-- 主内容 -->
+  <div class="container" id="main-content" style="display:none;">
+    <div class="header">
+      <h1>🌟 星账云管家图标投票</h1>
+      <p id="header-subtitle">选择你喜欢的图标，最多选 6 个</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" id="tab-vote" onclick="switchTab('vote')">🗳️ 投票</div>
+      <div class="tab" id="tab-results" onclick="switchTab('results')">📊 结果</div>
+    </div>
+
+    <!-- 投票页 -->
+    <div id="vote-section">
+      <div class="selected-count">
+        已选择 <span id="count">0</span> / 6 个图标
+      </div>
+      <div class="grid" id="icon-grid"></div>
+      <button class="submit-btn" id="submit-btn" disabled onclick="submitVote()">
+        提交投票（已选择 <span id="btn-count">0</span> 个）
+      </button>
+      <div class="closed-msg" id="closed-msg" style="display:none;">
+        ❌ 投票已结束（已达到 6 人上限）
+      </div>
+    </div>
+
+    <!-- 结果页 -->
+    <div id="results-section" style="display:none;">
+      <div class="stats">
+        <div>参与人数：<strong id="stat-voters">0</strong></div>
+        <div>总投票数：<strong id="stat-votes">0</strong></div>
+      </div>
+      <div class="top-list" id="top-list"></div>
+      <div class="loading" id="results-loading">加载中...</div>
+    </div>
+  </div>
+
+  <script>
+    const AUTH_API = '/api/auth';
+    const VOTE_API = '/api/vote';
+    const RESULTS_API = '/api/results';
+    const ICONS_API = '/icons.json';
+
+    let authToken = null;
+    let selectedIcons = new Set();
+    let iconsData = [];
+    let currentTab = 'vote';
+
+    // 密码验证
+    async function checkPassword() {
+      const input = document.getElementById('password-input').value;
+      const errorEl = document.getElementById('password-error');
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = '验证中...';
+
+      try {
+        const res = await fetch(AUTH_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: input })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          authToken = data.token;
+          document.getElementById('password-overlay').style.display = 'none';
+          document.getElementById('main-content').style.display = 'block';
+          init();
+        } else {
+          errorEl.style.display = 'block';
+          document.getElementById('password-input').value = '';
+        }
+      } catch (e) {
+        errorEl.textContent = '网络错误，请重试';
+        errorEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '确认';
+      }
+    }
+
+    document.getElementById('password-input').addEventListener('keypress', e => {
+      if (e.key === 'Enter') checkPassword();
+    });
+
+    // 初始化
+    async function init() {
+      await loadIcons();
+      await checkVotingStatus();
+      if (currentTab === 'results') loadResults();
+    }
+
+    // 加载图标
+    async function loadIcons() {
+      const res = await fetch(ICONS_API);
+      iconsData = await res.json();
+      renderIcons();
+    }
+
+    function renderIcons() {
+      const grid = document.getElementById('icon-grid');
+      grid.innerHTML = '';
+      iconsData.forEach(icon => {
+        const card = document.createElement('div');
+        card.className = 'icon-card';
+        card.dataset.id = icon.id;
+        card.innerHTML = `<img src="${icon.path}" alt="${icon.name}" /><div class="name">${icon.name}</div>`;
+        card.addEventListener('click', () => toggleIcon(icon.id, card));
+        grid.appendChild(card);
+      });
+    }
+
+    function toggleIcon(iconId, card) {
+      if (selectedIcons.has(iconId)) {
+        selectedIcons.delete(iconId);
+        card.classList.remove('selected');
+      } else {
+        if (selectedIcons.size >= 6) { alert('最多只能选择 6 个图标'); return; }
+        selectedIcons.add(iconId);
+        card.classList.add('selected');
+      }
+      updateCount();
+    }
+
+    function updateCount() {
+      const c = selectedIcons.size;
+      document.getElementById('count').textContent = c;
+      document.getElementById('btn-count').textContent = c;
+      document.getElementById('submit-btn').disabled = c === 0;
+    }
+
+    // 检查投票状态
+    async function checkVotingStatus() {
+      try {
+        const res = await fetch(RESULTS_API);
+        const data = await res.json();
+        if (data.totalVoters >= 6) {
+          document.getElementById('submit-btn').style.display = 'none';
+          document.getElementById('icon-grid').style.display = 'none';
+          document.getElementById('selected-count').style.display = 'none';
+          document.getElementById('closed-msg').style.display = 'block';
+        }
+      } catch (e) { console.error('检查状态失败', e); }
+    }
+
+    // 提交投票
+    async function submitVote() {
+      if (selectedIcons.size === 0) return;
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = '提交中...';
+
+      try {
+        const res = await fetch(VOTE_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selectedIcons: Array.from(selectedIcons) })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          document.getElementById('closed-msg').style.display = 'block';
+          document.getElementById('submit-btn').style.display = 'none';
+          document.getElementById('icon-grid').style.display = 'none';
+          document.getElementById('selected-count').style.display = 'none';
+          alert('✅ 投票成功！');
+        } else {
+          alert(data.error || '投票失败');
+        }
+      } catch (e) {
+        alert('网络错误，请重试');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = `提交投票（已选择 ${selectedIcons.size} 个）`;
+      }
+    }
+
+    // 切换标签
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('tab-vote').classList.toggle('active', tab === 'vote');
+      document.getElementById('tab-results').classList.toggle('active', tab === 'results');
+      document.getElementById('vote-section').style.display = tab === 'vote' ? 'block' : 'none';
+      document.getElementById('results-section').style.display = tab === 'results' ? 'block' : 'none';
+      if (tab === 'results') loadResults();
+    }
+
+    // 加载结果
+    async function loadResults() {
+      const loading = document.getElementById('results-loading');
+      const topList = document.getElementById('top-list');
+      loading.style.display = 'block';
+      topList.innerHTML = '';
+
+      try {
+        const res = await fetch(RESULTS_API);
+        const data = await res.json();
+
+        document.getElementById('stat-voters').textContent = data.totalVoters;
+        document.getElementById('stat-votes').textContent = data.totalVotes;
+
+        if (data.top10 && data.top10.length > 0) {
+          data.top10.forEach((item, i) => {
+            const icon = iconsData.find(ic => ic.id === item.id);
+            const name = icon ? icon.name : item.id;
+            const path = icon ? icon.path : '';
+            const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            const div = document.createElement('div');
+            div.className = 'top-item';
+            div.innerHTML = `
+              <div class="top-rank ${rankClass}">${i + 1}</div>
+              ${path ? `<img class="top-icon" src="${path}" alt="${name}" />` : ''}
+              <div class="top-name">${name}</div>
+              <div class="top-votes">${item.votes} 票</div>
+            `;
+            topList.appendChild(div);
+          });
+        } else {
+          topList.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">暂无投票数据</div>';
+        }
+      } catch (e) {
+        topList.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">加载失败</div>';
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
